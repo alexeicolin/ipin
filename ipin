@@ -1,0 +1,22 @@
+#!/usr/bin/bash
+
+GATEWAY="https://gateway.ipfs.io/ipfs"
+
+path="$1"
+
+if [[ "${path:0:7}" = "http://" || \
+      "${path:0:8}" = "https://" || \
+      "${path:0:6}" = "ftp://" ]]
+then
+    file=$(mktemp "/tmp/ipin.XXX")
+    wget -q -O "${file}" "${path}"
+else
+    file="${path}"
+fi
+
+file="${file}"
+ipfsout=$(ipfs add "${file}")
+
+filehash=$(echo "${ipfsout}" |  cut -d' ' -f2)
+
+echo $GATEWAY/${filehash}
