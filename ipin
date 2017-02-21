@@ -11,12 +11,22 @@ then
     file=$(mktemp "/tmp/ipin.XXX")
     wget -q -O "${file}" "${path}"
 else
-    file="${path}"
+    if [ -e "${path}" ]
+    then
+	    file="${path}"
+    else # hash
+	    hashstr="${path}"
+    fi
 fi
 
+if [ -z "${file}" ]
+then
+ipfs pin add ${hashstr}
+else
 file="${file}"
 ipfsout=$(ipfs add "${file}")
 
 filehash=$(echo "${ipfsout}" |  cut -d' ' -f2)
 
 echo $GATEWAY/${filehash}
+fi
