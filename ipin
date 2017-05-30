@@ -24,9 +24,9 @@ then
 ipfs pin add ${hashstr}
 else
 file="${file}"
-ipfsout=$(ipfs add "${file}")
+ipfsout=$(ipfs add -w "${file}")
 
-filehash=$(echo "${ipfsout}" |  cut -d' ' -f2)
+dirhash=$(echo "${ipfsout}" | sed -n '$p' | cut -d' ' -f2)
 
-echo $GATEWAY/${filehash}
+echo $GATEWAY/${dirhash}/$(basename ${file})
 fi
