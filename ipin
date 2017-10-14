@@ -1,6 +1,9 @@
 #!/usr/bin/bash
 
 GATEWAY="https://gateway.ipfs.io/ipfs"
+IPFS_USER=ipfs
+IPFS_GROUP=ipfs
+SUDO="sudo -u $IPFS_USER"
 
 path="$1"
 
@@ -21,12 +24,31 @@ fi
 
 if [ -z "${file}" ]
 then
-ipfs pin add ${hashstr}
+	$SUDO ipfs pin add ${hashstr}
 else
-file="${file}"
-ipfsout=$(ipfs add -w "${file}")
+	filename=$(basename ${file})
 
-dirhash=$(echo "${ipfsout}" | sed -n '$p' | cut -d' ' -f2)
+	if $SUDO bash -c "[ ! -r "${file}" ]"
+	then
+		if ! groups | grep -q $IPFS_GROUP
+		then
+			# because we want to do a chgrp
+			>&2 echo "error: user must belong to group $IPFS_GROUP"
+			exit 1
+		fi
 
-echo $GATEWAY/${dirhash}/$(basename ${file})
+		tmpdir=$(mktemp -d "/tmp/ipin.XXX")
+		cp -a "${file}" "${tmpdir}"
+		chmod g+rx ${tmpdir}
+		chmod g+r ${tmpdir}/${filename}
+		chgrp $IPFS_GROUP ${tmpdir} ${tmpdir}/${filename}
+		fileadd="${tmpdir}/${filename}"
+	else
+		fileadd=${file}
+	fi
+	ipfsout=$($SUDO ipfs add -w "${fileadd}")
+
+	dirhash=$(echo "${ipfsout}" | sed -n '$p' | cut -d' ' -f2)
+
+	echo $GATEWAY/${dirhash}/${filename}
 fi
